@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { User, Bot, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message, UserGender } from '@/lib/types';
@@ -23,39 +23,56 @@ export function ChatMessage({ message, userGender }: ChatMessageProps) {
   const { toast } = useToast();
 
   const handlePlayAudio = async () => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.play().catch(() => {});
+    // If the audio element has a src, just play it.
+    if (audioRef.current && audioRef.current.src && !isLoadingAudio) {
+      audioRef.current.play().catch((e) => {
+        console.error('Audio playback failed:', e);
+        toast({
+          variant: 'destructive',
+          title: 'Audio Playback Error',
+          description:
+            'Could not play audio. Your browser might be blocking it.',
+        });
+      });
       return;
     }
 
     if (isLoadingAudio) return;
 
     setIsLoadingAudio(true);
-    const result = await getAudioForText(message.content, userGender);
-    setIsLoadingAudio(false);
-
-    if (result.audioUrl) {
-      setAudioUrl(result.audioUrl);
-    } else if (result.error) {
+    try {
+      const result = await getAudioForText(message.content, userGender);
+      if (result.audioUrl && audioRef.current) {
+        setAudioUrl(result.audioUrl);
+        // Directly set the src and play inside the user-initiated click handler
+        // to avoid browser autoplay restrictions.
+        audioRef.current.src = result.audioUrl;
+        audioRef.current.play().catch((e) => {
+          console.error('Audio playback failed after fetch:', e);
+          toast({
+            variant: 'destructive',
+            title: 'Audio Playback Error',
+            description:
+              'Could not play audio. Your browser might be blocking it.',
+          });
+        });
+      } else if (result.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Audio Generation Failed',
+          description: result.error,
+        });
+      }
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Audio Generation Failed',
-        description: result.error,
+        title: 'Audio Generation Error',
+        description: 'An unexpected error occurred while generating audio.',
       });
+    } finally {
+      setIsLoadingAudio(false);
     }
   };
-
-  useEffect(() => {
-    // When the audioUrl is set (either initially or after fetching), play it.
-    if (audioUrl && audioRef.current) {
-      audioRef.current.src = audioUrl;
-      audioRef.current.play().catch((e) => {
-        console.error('Audio play failed:', e);
-        // This can happen if the user hasn't interacted with the page yet.
-        // The audio will still be playable via the button.
-      });
-    }
-  }, [audioUrl]);
 
   return (
     <div
@@ -98,9 +115,7 @@ export function ChatMessage({ message, userGender }: ChatMessageProps) {
                 <Play className="size-4" />
               )}
             </Button>
-            {audioUrl && (
-              <audio ref={audioRef} src={audioUrl} className="hidden" />
-            )}
+            <audio ref={audioRef} src={audioUrl} className="hidden" />
           </>
         )}
       </div>
