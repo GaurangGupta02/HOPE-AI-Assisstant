@@ -116,7 +116,7 @@ export function ChatPanel({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const userInput = formData.get('message') as string;
-    if (!userInput?.trim() || isCooldown) {
+    if (!userInput?.trim() || isPending || isCooldown) {
       return;
     }
 
@@ -151,7 +151,7 @@ export function ChatPanel({
 
       // Start cooldown after response
       setIsCooldown(true);
-      setTimeout(() => setIsCooldown(false), 2000); // 2-second cooldown
+      setTimeout(() => setIsCooldown(false), 5000); // 5-second cooldown
     });
   };
 
