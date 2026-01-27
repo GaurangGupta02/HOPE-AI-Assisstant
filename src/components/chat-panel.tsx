@@ -123,9 +123,19 @@ export function ChatPanel({
     formRef.current?.reset();
 
     startTransition(async () => {
-      const conversationHistory = useShortTermMemory
+      const recentMessages = useShortTermMemory
         ? newMessages.slice(-7)
         : [userMessage];
+
+      // Strip audioUrl before sending to the server to reduce payload size.
+      const conversationHistory = recentMessages.map(
+        ({ id, role, content }) => ({
+          id,
+          role,
+          content,
+        })
+      );
+
       const prevState = { messages: conversationHistory };
 
       const assistantMessage = await getAIResponse(prevState, formData);
