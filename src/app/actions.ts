@@ -256,13 +256,13 @@ export async function getAIResponse(
     };
 
     return { messages: [...newMessages, assistantMessage] };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting AI response:', error);
     const errorMessage: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
       content:
-        "I'm sorry, I encountered an issue while processing your request. Please try again.",
+        `I'm sorry, I encountered an issue while processing your request. This can sometimes be caused by a missing or invalid API key. Please ensure your GEMINI_API_KEY is set correctly in the .env file and try again.\n\nError: ${error.message || 'An unknown error occurred.'}`,
     };
     return { messages: [...newMessages, errorMessage] };
   }
