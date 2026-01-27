@@ -104,7 +104,9 @@ export function ChatPanel({
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const handleFormAction = (formData: FormData) => {
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     const userInput = formData.get('message') as string;
     if (!userInput?.trim()) {
       return;
@@ -143,7 +145,7 @@ export function ChatPanel({
       </header>
       <form
         ref={formRef}
-        action={handleFormAction}
+        onSubmit={handleFormSubmit}
         className="flex h-[calc(100svh-4rem)] flex-col"
       >
         <ChatInterface
