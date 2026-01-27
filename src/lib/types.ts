@@ -6,5 +6,3 @@ export type Message = {
 };
 
 export type Tone = 'Technical' | 'Casual' | 'Emotional';
-
-export type UserGender = 'male' | 'female' | 'unspecified';

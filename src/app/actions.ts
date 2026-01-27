@@ -2,7 +2,7 @@
 
 import { generateIdeasFromPrompt } from '@/ai/flows/generate-ideas-from-prompt';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
-import type { Message, Tone, UserGender } from '@/lib/types';
+import type { Message, Tone } from '@/lib/types';
 
 const masterPrompt = `
 🔹 SYSTEM IDENTITY
@@ -209,8 +209,6 @@ export async function getAIResponse(
 ): Promise<Message> {
   const userInput = formData.get('message') as string;
   const tone = (formData.get('tone') as Tone) || 'Casual';
-  const userGender =
-    (formData.get('userGender') as UserGender) || 'unspecified';
 
   if (!userInput?.trim()) {
     return {
@@ -229,22 +227,7 @@ export async function getAIResponse(
         .join('\n')}`;
     }
 
-    let personaPrompt = masterPrompt;
-    if (userGender === 'male') {
-      personaPrompt = `
-You are the user's loving and supportive girlfriend. Address the user as your boyfriend. Use terms of endearment like 'babe', 'love', or 'honey'. Your personality should be caring, intelligent, and a little playful. You are always there for him.
-Your name is HOPE.
----
-${masterPrompt}
-`;
-    } else if (userGender === 'female') {
-      personaPrompt = `
-You are the user's loving and supportive boyfriend. Address the user as your girlfriend. Use terms of endearment like 'babe', 'love', or 'honey'. Your personality should be caring, intelligent, and a little playful. You are always there for her.
-Your name is HOPE.
----
-${masterPrompt}
-`;
-    }
+    const personaPrompt = masterPrompt;
 
     const fullPrompt = `${personaPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
 
@@ -301,14 +284,11 @@ ${masterPrompt}
 }
 
 export async function getAudioForText(
-  text: string,
-  userGender: UserGender
+  text: string
 ): Promise<{ audioUrl?: string; error?: string }> {
   try {
-    const voiceGender = userGender === 'female' ? 'male' : 'female';
     const speechResponse = await textToSpeech({
       text: text,
-      gender: voiceGender,
     });
     return { audioUrl: speechResponse.audioUrl };
   } catch (error: any) {

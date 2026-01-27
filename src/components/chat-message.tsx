@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { User, Bot, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Message, UserGender } from '@/lib/types';
+import type { Message } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
@@ -12,10 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessageProps {
   message: Message;
-  userGender: UserGender;
 }
 
-export function ChatMessage({ message, userGender }: ChatMessageProps) {
+export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioUrl, setAudioUrl] = useState(message.audioUrl);
@@ -41,7 +40,7 @@ export function ChatMessage({ message, userGender }: ChatMessageProps) {
 
     setIsLoadingAudio(true);
     try {
-      const result = await getAudioForText(message.content, userGender);
+      const result = await getAudioForText(message.content);
       if (result.audioUrl && audioRef.current) {
         setAudioUrl(result.audioUrl);
         // Directly set the src and play inside the user-initiated click handler
