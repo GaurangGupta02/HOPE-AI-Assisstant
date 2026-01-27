@@ -20,6 +20,7 @@ function ChatInterface({
   useShortTermMemory,
   useLongTermMemory,
   isPending,
+  isCooldown,
 }: {
   messages: Message[];
   tone: Tone;
@@ -27,6 +28,7 @@ function ChatInterface({
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
   isPending: boolean;
+  isCooldown: boolean;
 }) {
   const pending = isPending;
 
@@ -57,9 +59,9 @@ function ChatInterface({
             placeholder="Ask HOPE anything..."
             rows={1}
             className="min-h-[4rem] resize-none rounded-xl border-2 bg-card p-4 pr-20 shadow-sm"
-            disabled={pending}
+            disabled={pending || isCooldown}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !pending) {
+              if (e.key === 'Enter' && !e.shiftKey && !(pending || isCooldown)) {
                 if ((e.target as HTMLTextAreaElement).value.trim()) {
                   e.preventDefault();
                   e.currentTarget.closest('form')?.requestSubmit();
@@ -83,7 +85,7 @@ function ChatInterface({
             type="submit"
             size="icon"
             className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full"
-            disabled={pending}
+            disabled={pending || isCooldown}
             aria-label="Send message"
           >
             {pending ? <Loader2 className="animate-spin" /> : <Send />}
@@ -107,13 +109,14 @@ export function ChatPanel({
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isCooldown, setIsCooldown] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const userInput = formData.get('message') as string;
-    if (!userInput?.trim()) {
+    if (!userInput?.trim() || isCooldown) {
       return;
     }
 
@@ -145,6 +148,10 @@ export function ChatPanel({
 
       const assistantMessage = await getAIResponse(prevState, formData);
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+
+      // Start cooldown after response
+      setIsCooldown(true);
+      setTimeout(() => setIsCooldown(false), 2000); // 2-second cooldown
     });
   };
 
@@ -170,6 +177,7 @@ export function ChatPanel({
           useShortTermMemory={useShortTermMemory}
           useLongTermMemory={useLongTermMemory}
           isPending={isPending}
+          isCooldown={isCooldown}
         />
       </form>
     </SidebarInset>
