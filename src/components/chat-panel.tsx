@@ -174,11 +174,32 @@ export function ChatPanel({
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        let description = `An error occurred: ${event.error}. Please try again.`;
+
+        switch (event.error) {
+          case 'not-allowed':
+          case 'service-not-allowed':
+            description =
+              'Microphone access was denied. Please allow microphone permissions in your browser settings to use this feature.';
+            break;
+          case 'network':
+            description =
+              'Speech recognition failed due to a network issue. Please check your internet connection and try again.';
+            break;
+          case 'no-speech':
+            description =
+              'No speech was detected. Please make sure your microphone is working and try again.';
+            break;
+          case 'audio-capture':
+            description =
+              'Could not capture audio. Please ensure your microphone is connected and working correctly.';
+            break;
+        }
+
         toast({
           variant: 'destructive',
           title: 'Speech Recognition Error',
-          description: `An error occurred: ${event.error}. Please ensure you've given microphone permissions.`,
+          description: description,
         });
         setIsListening(false);
       };
