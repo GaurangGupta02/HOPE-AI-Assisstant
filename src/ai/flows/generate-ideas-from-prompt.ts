@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow that generates a list of ideas from a given prompt or topic.
+ * @fileOverview This file defines a Genkit flow that generates a response from a given prompt and tone.
  *
- * - generateIdeasFromPrompt - An async function that takes a prompt and returns a list of ideas.
+ * - generateIdeasFromPrompt - An async function that takes a prompt and tone and returns a response.
  * - GenerateIdeasFromPromptInput - The input type for the generateIdeasFromPrompt function.
  * - GenerateIdeasFromPromptOutput - The output type for the generateIdeasFromPrompt function.
  */
@@ -13,11 +13,12 @@ import {z} from 'genkit';
 
 const GenerateIdeasFromPromptInputSchema = z.object({
   prompt: z.string().describe('The prompt or topic to generate ideas from.'),
+  tone: z.string().describe('The desired tone for the response.'),
 });
 export type GenerateIdeasFromPromptInput = z.infer<typeof GenerateIdeasFromPromptInputSchema>;
 
 const GenerateIdeasFromPromptOutputSchema = z.object({
-  ideas: z.array(z.string()).describe('A list of ideas generated from the prompt.'),
+  response: z.string().describe('The generated response.'),
 });
 export type GenerateIdeasFromPromptOutput = z.infer<typeof GenerateIdeasFromPromptOutputSchema>;
 
@@ -29,7 +30,7 @@ const prompt = ai.definePrompt({
   name: 'generateIdeasFromPromptPrompt',
   input: {schema: GenerateIdeasFromPromptInputSchema},
   output: {schema: GenerateIdeasFromPromptOutputSchema},
-  prompt: `You are an expert brainstorming assistant. Generate a list of creative and relevant ideas based on the following prompt:\n\nPrompt: {{{prompt}}}\n\nIdeas:`,
+  prompt: `{{{prompt}}}\n\n---\nRespond in a {{{tone}}} tone.`,
 });
 
 const generateIdeasFromPromptFlow = ai.defineFlow(
@@ -40,6 +41,6 @@ const generateIdeasFromPromptFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    return output || { response: '' };
   }
 );

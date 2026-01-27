@@ -1,7 +1,6 @@
 'use server';
 
 import { generateIdeasFromPrompt } from '@/ai/flows/generate-ideas-from-prompt';
-import { adaptResponseTone } from '@/ai/flows/adaptive-response-tone';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { Message, Tone } from '@/lib/types';
 
@@ -235,27 +234,24 @@ export async function getAIResponse(
 
     const fullPrompt = `${masterPrompt}${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
     
-    // 1. Generate a base response
-    const ideasResponse = await generateIdeasFromPrompt({ prompt: fullPrompt });
-    let initialResponseText = ideasResponse.ideas.join('\n\n');
+    // 1. Generate a single response with the correct tone.
+    const response = await generateIdeasFromPrompt({ 
+      prompt: fullPrompt, 
+      tone: tone 
+    });
+    let responseText = response.response;
 
-    if (!initialResponseText) {
-        initialResponseText = "I'm not sure how to respond to that. Could you please rephrase your request?";
+    if (!responseText) {
+        responseText = "I'm not sure how to respond to that. Could you please rephrase your request?";
     }
 
-    // 2. Adapt the tone of the response
-    const adaptedResponse = await adaptResponseTone({
-      userIntent: tone,
-      responseText: initialResponseText,
-    });
-
-    // 3. Generate speech
-    const speechResponse = await textToSpeech({ text: adaptedResponse.adaptedResponse });
+    // 2. Generate speech
+    const speechResponse = await textToSpeech({ text: responseText });
 
     const assistantMessage: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: adaptedResponse.adaptedResponse,
+      content: responseText,
       audioUrl: speechResponse.audioUrl,
     };
 
