@@ -2,6 +2,7 @@
 
 import { generateIdeasFromPrompt } from '@/ai/flows/generate-ideas-from-prompt';
 import { adaptResponseTone } from '@/ai/flows/adaptive-response-tone';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { Message, Tone } from '@/lib/types';
 
 const masterPrompt = `
@@ -248,10 +249,14 @@ export async function getAIResponse(
       responseText: initialResponseText,
     });
 
+    // 3. Generate speech
+    const speechResponse = await textToSpeech({ text: adaptedResponse.adaptedResponse });
+
     const assistantMessage: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: adaptedResponse.adaptedResponse,
+      audioUrl: speechResponse.audioUrl,
     };
 
     return { messages: [...newMessages, assistantMessage] };

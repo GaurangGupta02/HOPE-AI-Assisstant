@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
@@ -12,6 +13,13 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (message.audioUrl && audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
+  }, [message.audioUrl]);
 
   return (
     <div
@@ -41,6 +49,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {message.content}
           </div>
         </div>
+        {message.audioUrl && !isUser && (
+          <audio ref={audioRef} src={message.audioUrl} className="hidden" />
+        )}
       </div>
     </div>
   );

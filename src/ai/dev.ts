@@ -7,3 +7,4 @@ import '@/ai/flows/handle-uncertainty-gracefully.ts';
 import '@/ai/flows/improve-text-clarity.ts';
 import '@/ai/flows/generate-ideas-from-prompt.ts';
 import '@/ai/flows/classify-and-route-requests.ts';
+import '@/ai/flows/text-to-speech.ts';
