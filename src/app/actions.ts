@@ -231,10 +231,9 @@ export async function getAIResponse(
           .join('\n')}`;
       }
     }
-
-    const fullPrompt = `${masterPrompt}${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
     
-    // 1. Generate a single response with the correct tone.
+    const fullPrompt = `${masterPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
+    
     const response = await generateIdeasFromPrompt({ 
       prompt: fullPrompt, 
       tone: tone 
@@ -245,7 +244,6 @@ export async function getAIResponse(
         responseText = "I'm not sure how to respond to that. Could you please rephrase your request?";
     }
 
-    // 2. Generate speech
     const speechResponse = await textToSpeech({ text: responseText });
 
     const assistantMessage: Message = {
@@ -258,11 +256,20 @@ export async function getAIResponse(
     return { messages: [...newMessages, assistantMessage] };
   } catch (error: any) {
     console.error('Error getting AI response:', error);
+
+    let errorMessageText: string;
+    const errorMessageString = (error.message || '').toLowerCase();
+
+    if (errorMessageString.includes('429') || errorMessageString.includes('rate limit') || errorMessageString.includes('resource has been exhausted')) {
+      errorMessageText = "It seems I'm receiving requests too quickly. This is a common issue with free API plans that have rate limits. Please wait a moment and then try your message again.";
+    } else {
+      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This can sometimes be caused by a missing or invalid API key. Please ensure your GEMINI_API_KEY is set correctly in the .env file and try again.\n\nError: ${error.message || 'An unknown error occurred.'}`;
+    }
+
     const errorMessage: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content:
-        `I'm sorry, I encountered an issue while processing your request. This can sometimes be caused by a missing or invalid API key. Please ensure your GEMINI_API_KEY is set correctly in the .env file and try again.\n\nError: ${error.message || 'An unknown error occurred.'}`,
+      content: errorMessageText,
     };
     return { messages: [...newMessages, errorMessage] };
   }
