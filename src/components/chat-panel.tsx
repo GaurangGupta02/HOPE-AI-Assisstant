@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -104,7 +104,7 @@ export function ChatPanel({
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
 }) {
-  const [state, formAction] = useFormState(getAIResponse, initialState);
+  const [state, formAction] = useActionState(getAIResponse, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleFormAction = (formData: FormData) => {
