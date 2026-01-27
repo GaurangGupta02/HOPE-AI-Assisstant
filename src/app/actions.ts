@@ -259,17 +259,10 @@ ${masterPrompt}
         "I'm not sure how to respond to that. Could you please rephrase your request?";
     }
 
-    const voiceGender = userGender === 'female' ? 'male' : 'female';
-    const speechResponse = await textToSpeech({
-      text: responseText,
-      gender: voiceGender,
-    });
-
     const assistantMessage: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: responseText,
-      audioUrl: speechResponse.audioUrl,
     };
 
     return assistantMessage;
@@ -304,5 +297,25 @@ ${masterPrompt}
       content: errorMessageText,
     };
     return errorMessage;
+  }
+}
+
+export async function getAudioForText(
+  text: string,
+  userGender: UserGender
+): Promise<{ audioUrl?: string; error?: string }> {
+  try {
+    const voiceGender = userGender === 'female' ? 'male' : 'female';
+    const speechResponse = await textToSpeech({
+      text: text,
+      gender: voiceGender,
+    });
+    return { audioUrl: speechResponse.audioUrl };
+  } catch (error: any) {
+    console.error('Error getting TTS response:', error);
+    return {
+      error:
+        "I couldn't generate the audio for this message. The model may be overloaded or the content may have been blocked.",
+    };
   }
 }

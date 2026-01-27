@@ -49,7 +49,11 @@ function ChatInterface({
             </p>
           </div>
         ) : (
-          <ChatMessages messages={messages} isPending={pending} />
+          <ChatMessages
+            messages={messages}
+            isPending={pending}
+            userGender={userGender}
+          />
         )}
       </main>
       <footer className="border-t bg-card/50 p-4 md:p-6">

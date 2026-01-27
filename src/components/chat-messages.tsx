@@ -1,15 +1,20 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { Message } from '@/lib/types';
+import type { Message, UserGender } from '@/lib/types';
 import { ChatMessage, ChatMessageSkeleton } from './chat-message';
 
 interface ChatMessagesProps {
   messages: Message[];
   isPending: boolean;
+  userGender: UserGender;
 }
 
-export function ChatMessages({ messages, isPending }: ChatMessagesProps) {
+export function ChatMessages({
+  messages,
+  isPending,
+  userGender,
+}: ChatMessagesProps) {
   const scrollableContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,7 +27,11 @@ export function ChatMessages({ messages, isPending }: ChatMessagesProps) {
   return (
     <div ref={scrollableContainerRef} className="h-full space-y-6">
       {messages.map((message) => (
-        <ChatMessage key={message.id} message={message} />
+        <ChatMessage
+          key={message.id}
+          message={message}
+          userGender={userGender}
+        />
       ))}
       {isPending && <ChatMessageSkeleton />}
     </div>
