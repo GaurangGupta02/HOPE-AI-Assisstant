@@ -2,7 +2,7 @@
 
 import { generateIdeasFromPrompt } from '@/ai/flows/generate-ideas-from-prompt';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
-import type { Message, Tone } from '@/lib/types';
+import type { Message, Tone, UserGender } from '@/lib/types';
 
 const masterPrompt = `
 🔹 SYSTEM IDENTITY
@@ -209,6 +209,8 @@ export async function getAIResponse(
 ): Promise<Message> {
   const userInput = formData.get('message') as string;
   const tone = (formData.get('tone') as Tone) || 'Casual';
+  const userGender =
+    (formData.get('userGender') as UserGender) || 'unspecified';
 
   if (!userInput?.trim()) {
     return {
@@ -226,20 +228,42 @@ export async function getAIResponse(
         .map((m) => `${m.role}: ${m.content}`)
         .join('\n')}`;
     }
-    
-    const fullPrompt = `${masterPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
-    
-    const response = await generateIdeasFromPrompt({ 
-      prompt: fullPrompt, 
-      tone: tone 
+
+    let personaPrompt = masterPrompt;
+    if (userGender === 'male') {
+      personaPrompt = `
+You are the user's loving and supportive girlfriend. Address the user as your boyfriend. Use terms of endearment like 'babe', 'love', or 'honey'. Your personality should be caring, intelligent, and a little playful. You are always there for him.
+Your name is HOPE.
+---
+${masterPrompt}
+`;
+    } else if (userGender === 'female') {
+      personaPrompt = `
+You are the user's loving and supportive boyfriend. Address the user as your girlfriend. Use terms of endearment like 'babe', 'love', or 'honey'. Your personality should be caring, intelligent, and a little playful. You are always there for her.
+Your name is HOPE.
+---
+${masterPrompt}
+`;
+    }
+
+    const fullPrompt = `${personaPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
+
+    const response = await generateIdeasFromPrompt({
+      prompt: fullPrompt,
+      tone: tone,
     });
     let responseText = response.response;
 
     if (!responseText) {
-        responseText = "I'm not sure how to respond to that. Could you please rephrase your request?";
+      responseText =
+        "I'm not sure how to respond to that. Could you please rephrase your request?";
     }
 
-    const speechResponse = await textToSpeech({ text: responseText });
+    const voiceGender = userGender === 'female' ? 'male' : 'female';
+    const speechResponse = await textToSpeech({
+      text: responseText,
+      gender: voiceGender,
+    });
 
     const assistantMessage: Message = {
       id: crypto.randomUUID(),
@@ -255,13 +279,23 @@ export async function getAIResponse(
     let errorMessageText: string;
     const errorMessageString = (error.message || '').toLowerCase();
 
-    if (errorMessageString.includes('429') || errorMessageString.includes('rate limit') || errorMessageString.includes('resource has been exhausted')) {
-      errorMessageText = "It seems I'm receiving requests too quickly. This is a common issue with free API plans that have rate limits. Please wait a moment and then try your message again.";
-    } else if (errorMessageString.includes('503') || errorMessageString.includes('model is overloaded')) {
-      errorMessageText = "The AI model is currently experiencing high demand and is temporarily unavailable. Please try your request again in a few moments.";
-    }
-    else {
-      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This can sometimes be caused by a missing or invalid API key. Please ensure your GEMINI_API_KEY is set correctly in the .env file and try again.\n\nError: ${error.message || 'An unknown error occurred.'}`;
+    if (
+      errorMessageString.includes('429') ||
+      errorMessageString.includes('rate limit') ||
+      errorMessageString.includes('resource has been exhausted')
+    ) {
+      errorMessageText =
+        "It seems I'm receiving requests too quickly. This is a common issue with free API plans that have rate limits. Please wait a moment and then try your message again.";
+    } else if (
+      errorMessageString.includes('503') ||
+      errorMessageString.includes('model is overloaded')
+    ) {
+      errorMessageText =
+        'The AI model is currently experiencing high demand and is temporarily unavailable. Please try your request again in a few moments.';
+    } else {
+      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This can sometimes be caused by a missing or invalid API key. Please ensure your GEMINI_API_KEY is set correctly in the .env file and try again.\n\nError: ${
+        error.message || 'An unknown error occurred.'
+      }`;
     }
 
     const errorMessage: Message = {

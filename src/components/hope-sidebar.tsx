@@ -19,12 +19,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Icons } from '@/components/icons';
-import type { Tone } from '@/lib/types';
+import type { Tone, UserGender } from '@/lib/types';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface HopeSidebarProps {
   tone: Tone;
   setTone: Dispatch<SetStateAction<Tone>>;
+  userGender: UserGender;
+  setUserGender: Dispatch<SetStateAction<UserGender>>;
   useShortTermMemory: boolean;
   setUseShortTermMemory: Dispatch<SetStateAction<boolean>>;
   useLongTermMemory: boolean;
@@ -34,6 +36,8 @@ interface HopeSidebarProps {
 export function HopeSidebar({
   tone,
   setTone,
+  userGender,
+  setUserGender,
   useShortTermMemory,
   setUseShortTermMemory,
   useLongTermMemory,
@@ -68,6 +72,22 @@ export function HopeSidebar({
                       <SelectItem value="Casual">Casual</SelectItem>
                       <SelectItem value="Technical">Technical</SelectItem>
                       <SelectItem value="Emotional">Emotional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="user-gender-select">Your Gender</Label>
+                  <Select
+                    value={userGender}
+                    onValueChange={(v) => setUserGender(v as UserGender)}
+                  >
+                    <SelectTrigger id="user-gender-select">
+                      <SelectValue placeholder="Select your gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unspecified">Unspecified</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

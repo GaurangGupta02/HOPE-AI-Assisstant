@@ -8,7 +8,7 @@ import { Send, Loader2 } from 'lucide-react';
 import { getAIResponse } from '@/app/actions';
 import { ChatMessages } from './chat-messages';
 import { Icons } from '@/components/icons';
-import type { Message, Tone } from '@/lib/types';
+import type { Message, Tone, UserGender } from '@/lib/types';
 
 /**
  * Renders the chat messages and the input form.
@@ -16,12 +16,14 @@ import type { Message, Tone } from '@/lib/types';
 function ChatInterface({
   messages,
   tone,
+  userGender,
   useShortTermMemory,
   useLongTermMemory,
   isPending,
 }: {
   messages: Message[];
   tone: Tone;
+  userGender: UserGender;
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
   isPending: boolean;
@@ -65,6 +67,7 @@ function ChatInterface({
               }
             }}
           />
+          <input type="hidden" name="userGender" value={userGender} />
           <input type="hidden" name="tone" value={tone} />
           <input
             type="hidden"
@@ -93,10 +96,12 @@ function ChatInterface({
 
 export function ChatPanel({
   tone,
+  userGender,
   useShortTermMemory,
   useLongTermMemory,
 }: {
   tone: Tone;
+  userGender: UserGender;
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
 }) {
@@ -161,6 +166,7 @@ export function ChatPanel({
         <ChatInterface
           messages={messages}
           tone={tone}
+          userGender={userGender}
           useShortTermMemory={useShortTermMemory}
           useLongTermMemory={useLongTermMemory}
           isPending={isPending}
