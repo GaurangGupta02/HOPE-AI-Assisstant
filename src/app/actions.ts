@@ -206,32 +206,25 @@ You stay human-oriented.
 export async function getAIResponse(
   prevState: { messages: Message[] },
   formData: FormData
-): Promise<{ messages: Message[] }> {
+): Promise<Message> {
   const userInput = formData.get('message') as string;
   const tone = (formData.get('tone') as Tone) || 'Casual';
-  const useShortTermMemory = formData.get('useShortTermMemory') === 'true';
 
   if (!userInput?.trim()) {
-    return prevState;
+    return {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: 'Empty message received.',
+    };
   }
-
-  const userMessage: Message = {
-    id: crypto.randomUUID(),
-    role: 'user',
-    content: userInput,
-  };
-
-  const newMessages = [...prevState.messages, userMessage];
 
   try {
     let context = '';
-    if (useShortTermMemory) {
-      const history = prevState.messages.slice(-6); // Limit context size
-      if (history.length > 0) {
-        context = `\n\nCONVERSATION HISTORY (for context only):\n${history
-          .map((m) => `${m.role}: ${m.content}`)
-          .join('\n')}`;
-      }
+    // The client now sends a limited history in prevState
+    if (prevState.messages.length > 0) {
+      context = `\n\nCONVERSATION HISTORY (for context only):\n${prevState.messages
+        .map((m) => `${m.role}: ${m.content}`)
+        .join('\n')}`;
     }
     
     const fullPrompt = `${masterPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
@@ -255,7 +248,7 @@ export async function getAIResponse(
       audioUrl: speechResponse.audioUrl,
     };
 
-    return { messages: [...newMessages, assistantMessage] };
+    return assistantMessage;
   } catch (error: any) {
     console.error('Error getting AI response:', error);
 
@@ -276,6 +269,6 @@ export async function getAIResponse(
       role: 'assistant',
       content: errorMessageText,
     };
-    return { messages: [...newMessages, errorMessage] };
+    return errorMessage;
   }
 }

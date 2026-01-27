@@ -1,7 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useTransition, useRef } from 'react';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,26 +10,23 @@ import { ChatMessages } from './chat-messages';
 import { Icons } from '@/components/icons';
 import type { Message, Tone } from '@/lib/types';
 
-const initialState: { messages: Message[] } = {
-  messages: [],
-};
-
 /**
  * Renders the chat messages and the input form.
- * It uses useFormStatus to correctly disable the form while a response is pending.
  */
 function ChatInterface({
   messages,
   tone,
   useShortTermMemory,
   useLongTermMemory,
+  isPending,
 }: {
   messages: Message[];
   tone: Tone;
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
+  isPending: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const pending = isPending;
 
   return (
     <>
@@ -104,14 +100,35 @@ export function ChatPanel({
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
 }) {
-  const [state, formAction] = useActionState(getAIResponse, initialState);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleFormAction = (formData: FormData) => {
-    if (formData.get('message')?.toString().trim()) {
-      formAction(formData);
-      formRef.current?.reset();
+    const userInput = formData.get('message') as string;
+    if (!userInput?.trim()) {
+      return;
     }
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: userInput,
+    };
+
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    formRef.current?.reset();
+
+    startTransition(async () => {
+      const conversationHistory = useShortTermMemory
+        ? newMessages.slice(-7)
+        : [userMessage];
+      const prevState = { messages: conversationHistory };
+
+      const assistantMessage = await getAIResponse(prevState, formData);
+      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+    });
   };
 
   return (
@@ -130,10 +147,11 @@ export function ChatPanel({
         className="flex h-[calc(100svh-4rem)] flex-col"
       >
         <ChatInterface
-          messages={state.messages}
+          messages={messages}
           tone={tone}
           useShortTermMemory={useShortTermMemory}
           useLongTermMemory={useLongTermMemory}
+          isPending={isPending}
         />
       </form>
     </SidebarInset>
