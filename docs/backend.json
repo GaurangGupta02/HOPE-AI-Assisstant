@@ -24,24 +24,11 @@
         }
       },
       "required": [
-        "gender",
-        "displayName",
-        "email"
+        "gender"
       ]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "google.com"
-    ]
-  },
-  "firestore": {
-    "/users/{userId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserProfile"
-      },
-      "description": "Stores public profile information for each user."
-    }
+    "providers": []
   }
 }

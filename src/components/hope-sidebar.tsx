@@ -25,6 +25,8 @@ import type { Dispatch, SetStateAction } from 'react';
 interface HopeSidebarProps {
   tone: Tone;
   setTone: Dispatch<SetStateAction<Tone>>;
+  gender: 'male' | 'female';
+  setGender: Dispatch<SetStateAction<'male' | 'female'>>;
   useShortTermMemory: boolean;
   setUseShortTermMemory: Dispatch<SetStateAction<boolean>>;
   useLongTermMemory: boolean;
@@ -34,6 +36,8 @@ interface HopeSidebarProps {
 export function HopeSidebar({
   tone,
   setTone,
+  gender,
+  setGender,
   useShortTermMemory,
   setUseShortTermMemory,
   useLongTermMemory,
@@ -58,6 +62,24 @@ export function HopeSidebar({
           <SidebarMenu>
             <SidebarMenuItem className="!p-0">
               <div className="flex w-full flex-col gap-4 p-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="gender-select">Your Gender</Label>
+                  <Select
+                    value={gender}
+                    onValueChange={(v) => setGender(v as 'male' | 'female')}
+                  >
+                    <SelectTrigger id="gender-select">
+                      <SelectValue placeholder="Select your gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    This determines the assistant&apos;s voice.
+                  </p>
+                </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="tone-select">Adaptive Tone</Label>
                   <Select value={tone} onValueChange={(v) => setTone(v as Tone)}>

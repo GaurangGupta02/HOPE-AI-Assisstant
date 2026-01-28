@@ -4,15 +4,12 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, Mic, MicOff, LogOut } from 'lucide-react';
+import { Send, Loader2, Mic, MicOff } from 'lucide-react';
 import { getAIResponse, getAudioForText } from '@/app/actions';
 import { ChatMessages } from './chat-messages';
 import { Icons } from '@/components/icons';
 import type { Message, Tone } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 
 type UserProfile = {
   gender: 'male' | 'female';
@@ -134,8 +131,6 @@ export function ChatPanel({
   const [isListening, setIsListening] = useState(false);
   const [micSupported, setMicSupported] = useState(false);
   const { toast } = useToast();
-  const auth = useAuth();
-  const router = useRouter();
 
 
   useEffect(() => {
@@ -296,11 +291,6 @@ export function ChatPanel({
     setTextareaValue(e.target.value);
   };
   
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
-
   return (
     <SidebarInset>
       <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
@@ -310,9 +300,6 @@ export function ChatPanel({
             HOPE Assistant
           </h1>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
-          <LogOut />
-        </Button>
       </header>
       <form
         ref={formRef}
