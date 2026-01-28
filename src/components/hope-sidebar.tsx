@@ -10,21 +10,11 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Icons } from '@/components/icons';
-import type { Tone } from '@/lib/types';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface HopeSidebarProps {
-  tone: Tone;
-  setTone: Dispatch<SetStateAction<Tone>>;
   useShortTermMemory: boolean;
   setUseShortTermMemory: Dispatch<SetStateAction<boolean>>;
   useLongTermMemory: boolean;
@@ -32,8 +22,6 @@ interface HopeSidebarProps {
 }
 
 export function HopeSidebar({
-  tone,
-  setTone,
   useShortTermMemory,
   setUseShortTermMemory,
   useLongTermMemory,
@@ -58,22 +46,6 @@ export function HopeSidebar({
           <SidebarMenu>
             <SidebarMenuItem className="!p-0">
               <div className="flex w-full flex-col gap-4 p-2">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="tone-select">Adaptive Tone</Label>
-                  <Select
-                    value={tone}
-                    onValueChange={(v) => setTone(v as Tone)}
-                  >
-                    <SelectTrigger id="tone-select">
-                      <SelectValue placeholder="Select a tone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Casual">Casual</SelectItem>
-                      <SelectItem value="Technical">Technical</SelectItem>
-                      <SelectItem value="Emotional">Emotional</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="flex flex-col gap-3">
                   <Label>Memory Layers</Label>
                   <div className="flex items-center justify-between rounded-md border p-3">

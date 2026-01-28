@@ -4,5 +4,3 @@ export type Message = {
   content: string;
   audioUrl?: string;
 };
-
-export type Tone = 'Technical' | 'Casual' | 'Emotional';

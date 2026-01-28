@@ -59,7 +59,7 @@ const textToSpeechFlow = ai.defineFlow(
     outputSchema: TextToSpeechOutputSchema,
   },
   async ({text}) => {
-    const voiceName = 'Algenib'; // Hardcoded female voice
+    const voiceName = 'Algenib'; // This is a standard female voice.
 
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
