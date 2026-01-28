@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessageProps {
   message: Message;
@@ -14,6 +15,7 @@ interface ChatMessageProps {
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (message.role === 'assistant' && message.audioUrl && audioRef.current) {
@@ -25,13 +27,24 @@ export function ChatMessage({ message }: ChatMessageProps) {
             console.warn(
               'Audio autoplay was prevented by the browser. User interaction is required to play audio.'
             );
+            toast({
+              variant: 'destructive',
+              title: 'Audio Autoplay Blocked',
+              description:
+                "The browser prevented the assistant's voice from playing automatically.",
+            });
           } else {
             console.error('Audio playback failed:', error);
+            toast({
+              variant: 'destructive',
+              title: 'Audio Playback Error',
+              description: 'Could not play the audio for an unknown reason.',
+            });
           }
         });
       }
     }
-  }, [message.audioUrl, message.role]);
+  }, [message.audioUrl, message.role, toast]);
 
   return (
     <div
