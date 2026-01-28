@@ -90,37 +90,10 @@ export async function getAIResponse(
 
     const fullPrompt = `${personaPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
 
-    let response;
-    const retries = 3;
-    let delay = 1500; // Start with a 1.5-second delay
-
-    for (let i = 0; i < retries; i++) {
-      try {
-        response = await generateIdeasFromPrompt({
-          prompt: fullPrompt,
-          tone: tone,
-        });
-        break; // Success, exit loop
-      } catch (error: any) {
-        const errorMessageString = (error.message || '').toLowerCase();
-        const isTransientError =
-          errorMessageString.includes('429') ||
-          errorMessageString.includes('rate limit') ||
-          errorMessageString.includes('resource has been exhausted') ||
-          errorMessageString.includes('503') ||
-          errorMessageString.includes('model is overloaded');
-
-        if (isTransientError && i < retries - 1) {
-          // It's a transient error and we have retries left
-          await new Promise((res) => setTimeout(res, delay));
-          delay *= 2; // Exponential backoff
-          continue; // Go to next iteration
-        } else {
-          // Not a transient error, or no retries left, so re-throw
-          throw error;
-        }
-      }
-    }
+    const response = await generateIdeasFromPrompt({
+      prompt: fullPrompt,
+      tone: tone,
+    });
     
     let responseText = response!.response;
 
@@ -145,12 +118,10 @@ export async function getAIResponse(
     if (
       errorMessageString.includes('429') ||
       errorMessageString.includes('rate limit') ||
-      errorMessageString.includes('resource has been exhausted') ||
-      errorMessageString.includes('503') ||
-      errorMessageString.includes('model is overloaded')
+      errorMessageString.includes('resource has been exhausted')
     ) {
       errorMessageText =
-        "I'm experiencing a high volume of requests right now and couldn't get a response. I tried to recover automatically but was unsuccessful. This is common with free API plans. Please wait a moment before trying again.";
+        "I'm experiencing a high volume of requests right now. Please try again in a moment.";
     } else {
       errorMessageText = `I'm sorry, I encountered an issue while processing your request. This could be due to a missing or invalid API key.\n\nPlease check your GEMINI_API_KEY in the .env file.\n\nError: ${
         error.message || 'An unknown error occurred.'
@@ -169,51 +140,18 @@ export async function getAIResponse(
 export async function getAudioForText(
   text: string
 ): Promise<{ audioUrl?: string; error?: string }> {
-  const retries = 3;
-  let delay = 1000; // Start with a 1-second delay
-
-  for (let i = 0; i < retries; i++) {
-    try {
-      const speechResponse = await textToSpeech({ text: text });
-      return { audioUrl: speechResponse.audioUrl }; // Success
-    } catch (error: any) {
-      console.error(`Audio generation attempt ${i + 1} failed:`, error);
-      const errorMessageString = (error.message || '').toLowerCase();
-      const isTransientError =
-        errorMessageString.includes('429') ||
-        errorMessageString.includes('rate limit') ||
-        errorMessageString.includes('resource has been exhausted') ||
-        errorMessageString.includes('503') ||
-        errorMessageString.includes('model is overloaded');
-
-      if (isTransientError && i < retries - 1) {
-        // It's a transient error, and we have retries left
-        await new Promise((res) => setTimeout(res, delay));
-        delay *= 2; // Exponential backoff
-      } else {
-        // This was the last attempt, or it's not a transient error
-        console.error('Final audio generation error:', error);
-        let userErrorMessage =
-          "I couldn't generate the audio for this message. The content may have been blocked or the service could be temporarily down.";
-
-        if (isTransientError) {
-          userErrorMessage =
-            'Audio generation is overloaded right now. Please try again in a moment.';
-        } else if (errorMessageString.includes('api key')) {
-          userErrorMessage =
-            'Audio generation failed due to a configuration issue (API key).';
-        }
-
-        return {
-          error: userErrorMessage,
-        };
-      }
+  try {
+    const speechResponse = await textToSpeech({ text: text });
+    if (speechResponse.audioUrl) {
+      return { audioUrl: speechResponse.audioUrl };
     }
+    return { error: 'Audio generation failed: No URL returned.' };
+  } catch (error: any) {
+    console.error('Audio generation error:', error);
+    // Add more specific error handling based on expected errors from textToSpeech
+    return {
+      error:
+        "I couldn't generate the audio for this message. The content may have been blocked or the service could be temporarily down.",
+    };
   }
-
-  // This part is a fallback, in case the loop completes without returning.
-  return {
-    error:
-      "I couldn't generate audio after several attempts. Please try again later.",
-  };
 }
