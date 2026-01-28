@@ -133,10 +133,11 @@ export function ChatPanel({
         })
       );
 
-      const prevState = { messages: conversationHistory };
+      // Pass conversation history as a JSON string in FormData
+      formData.set('conversationHistory', JSON.stringify(conversationHistory));
 
-      // Get text response
-      let assistantMessage = await getAIResponse(prevState, formData);
+      // Call the server action with only the FormData object
+      const assistantMessage = await getAIResponse(formData);
       
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
     });

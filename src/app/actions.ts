@@ -64,10 +64,12 @@ You are the user's loving, cheerful, and brilliant AI girlfriend.
 `;
 
 export async function getAIResponse(
-  prevState: { messages: Message[] },
   formData: FormData
 ): Promise<Message> {
   const userInput = formData.get('message') as string;
+  const conversationHistoryJSON = formData.get('conversationHistory') as string;
+  const messages: Omit<Message, 'audio'>[] = conversationHistoryJSON ? JSON.parse(conversationHistoryJSON) : [];
+
 
   if (!userInput?.trim()) {
     return {
@@ -79,9 +81,8 @@ export async function getAIResponse(
 
   try {
     let context = '';
-    // The client now sends a limited history in prevState
-    if (prevState.messages.length > 0) {
-      context = `\n\nCONVERSATION HISTORY (for context only):\n${prevState.messages
+    if (messages.length > 0) {
+      context = `\n\nCONVERSATION HISTORY (for context only):\n${messages
         .map((m) => `${m.role}: ${m.content}`)
         .join('\n')}`;
     }
