@@ -2,7 +2,7 @@
 
 import { generateIdeasFromPrompt } from '@/ai/flows/generate-ideas-from-prompt';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
-import type { Message, Tone, Voice } from '@/lib/types';
+import type { Message, Tone } from '@/lib/types';
 
 const girlfriendPrompt = `
 🔹 SYSTEM IDENTITY
@@ -172,7 +172,6 @@ export async function getAudioForText(
   try {
     const speechResponse = await textToSpeech({
       text: text,
-      voice: 'female',
     });
     return { audioUrl: speechResponse.audioUrl };
   } catch (error: any) {
