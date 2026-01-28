@@ -1,7 +1,6 @@
 'use server';
 
 import { generateIdeasFromPrompt } from '@/ai/flows/generate-ideas-from-prompt';
-import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { Message } from '@/lib/types';
 
 const girlfriendPrompt = `
@@ -133,24 +132,5 @@ export async function getAIResponse(
       content: errorMessageText,
     };
     return errorMessage;
-  }
-}
-
-export async function getAudioForText(
-  text: string
-): Promise<{ audioUrl?: string; error?: string }> {
-  try {
-    const speechResponse = await textToSpeech({ text: text });
-    if (speechResponse.audioUrl) {
-      return { audioUrl: speechResponse.audioUrl };
-    }
-    return { error: 'Audio generation failed: No URL returned.' };
-  } catch (error: any) {
-    console.error('Audio generation error:', error);
-    // Add more specific error handling based on expected errors from textToSpeech
-    return {
-      error:
-        "I couldn't generate the audio for this message. The content may have been blocked or the service could be temporarily down.",
-    };
   }
 }
