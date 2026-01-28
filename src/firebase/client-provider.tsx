@@ -6,6 +6,7 @@ import type {Auth} from 'firebase/auth';
 import type {Firestore} from 'firebase/firestore';
 import {FirebaseProvider, initializeFirebase} from '@/firebase';
 import {Skeleton} from '@/components/ui/skeleton';
+import {getFirebaseConfig} from './config';
 
 export const FirebaseClientProvider = ({
   children,
@@ -20,20 +21,39 @@ export const FirebaseClientProvider = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const firebaseInstances = initializeFirebase();
-      setFirebase(firebaseInstances);
-    } catch (e: any) {
-      console.error(e);
-      setError(
-        'Firebase configuration is missing. Please check your environment variables.'
-      );
-    }
+    let attempts = 0;
+    const maxAttempts = 20; // Try for up to 2 seconds
+    const interval = 100;
+
+    const tryInitialize = () => {
+      if (getFirebaseConfig()) {
+        try {
+          const firebaseInstances = initializeFirebase();
+          setFirebase(firebaseInstances);
+        } catch (e: any) {
+          console.error('Firebase initialization failed:', e);
+          setError(
+            'An unexpected error occurred during Firebase initialization.'
+          );
+        }
+      } else {
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(tryInitialize, interval);
+        } else {
+          setError(
+            'Firebase configuration could not be loaded. This might be a network issue or a problem with the project setup. Please refresh the page.'
+          );
+        }
+      }
+    };
+
+    tryInitialize();
   }, []);
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center p-4">
         <div className="rounded-lg border border-destructive bg-destructive/10 p-8 text-center text-destructive">
           <h2 className="text-lg font-semibold">Firebase Error</h2>
           <p className="mt-2">{error}</p>
