@@ -88,11 +88,37 @@ export async function getAIResponse(
 
     const fullPrompt = `${personaPrompt}\n\nTONE: ${tone}\n${context}\n\nCURRENT USER MESSAGE:\n${userInput}`;
 
-    const response = await generateIdeasFromPrompt({
-      prompt: fullPrompt,
-      tone: tone,
-    });
-    let responseText = response.response;
+    let response;
+    const retries = 3;
+    let delay = 1500; // Start with a 1.5-second delay
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        response = await generateIdeasFromPrompt({
+          prompt: fullPrompt,
+          tone: tone,
+        });
+        break; // Success, exit loop
+      } catch (error: any) {
+        const errorMessageString = (error.message || '').toLowerCase();
+        const isRateLimitError =
+          errorMessageString.includes('429') ||
+          errorMessageString.includes('rate limit') ||
+          errorMessageString.includes('resource has been exhausted');
+
+        if (isRateLimitError && i < retries - 1) {
+          // It's a rate limit error and we have retries left
+          await new Promise((res) => setTimeout(res, delay));
+          delay *= 2; // Exponential backoff
+          continue; // Go to next iteration
+        } else {
+          // Not a rate limit error, or no retries left, so re-throw
+          throw error;
+        }
+      }
+    }
+    
+    let responseText = response!.response;
 
     if (!responseText) {
       responseText =
@@ -126,7 +152,7 @@ export async function getAIResponse(
       errorMessageText =
         'The AI model is currently experiencing high demand and is temporarily unavailable. Please try your request again in a few moments.';
     } else {
-      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This can sometimes be caused by a missing or invalid API key. Please ensure your GEMINI_API_KEY is set correctly in the .env file and try again.\n\nError: ${
+      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This can be caused by a missing or invalid API key, or if the free-tier API rate limit has been exceeded. Please check your GEMINI_API_KEY in the .env file and try again in a moment.\n\nError: ${
         error.message || 'An unknown error occurred.'
       }`;
     }
