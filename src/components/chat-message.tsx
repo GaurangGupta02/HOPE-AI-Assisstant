@@ -1,10 +1,12 @@
 'use client';
 
-import { User, Bot } from 'lucide-react';
+import { User, Bot, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { useEffect, useRef } from 'react';
+import { Button } from './ui/button';
 
 interface ChatMessageProps {
   message: Message;
@@ -12,6 +14,23 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (message.audio && audioRef.current) {
+      audioRef.current.play().catch((e) => {
+        // Autoplay was prevented. This can happen if the user hasn't interacted with the page yet.
+        // The user can still click the play button.
+        console.warn('Audio autoplay was prevented:', e);
+      });
+    }
+  }, [message.audio]);
+
+  const handlePlayAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.play();
+    }
+  };
 
   return (
     <div
@@ -37,6 +56,23 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <div className="prose prose-sm max-w-none text-current whitespace-pre-wrap">
             {message.content}
           </div>
+          {message.audio && (
+            <>
+              <audio ref={audioRef} src={message.audio} className="hidden" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'mt-2 h-7 w-7',
+                  isUser ? 'float-right' : 'float-left'
+                )}
+                onClick={handlePlayAudio}
+              >
+                <Volume2 className="size-4" />
+                <span className="sr-only">Play audio</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
