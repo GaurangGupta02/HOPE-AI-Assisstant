@@ -19,12 +19,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Icons } from '@/components/icons';
-import type { Tone } from '@/lib/types';
+import type { Tone, Voice } from '@/lib/types';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface HopeSidebarProps {
   tone: Tone;
   setTone: Dispatch<SetStateAction<Tone>>;
+  voice: Voice;
+  setVoice: Dispatch<SetStateAction<Voice>>;
   useShortTermMemory: boolean;
   setUseShortTermMemory: Dispatch<SetStateAction<boolean>>;
   useLongTermMemory: boolean;
@@ -34,6 +36,8 @@ interface HopeSidebarProps {
 export function HopeSidebar({
   tone,
   setTone,
+  voice,
+  setVoice,
   useShortTermMemory,
   setUseShortTermMemory,
   useLongTermMemory,
@@ -59,8 +63,26 @@ export function HopeSidebar({
             <SidebarMenuItem className="!p-0">
               <div className="flex w-full flex-col gap-4 p-2">
                 <div className="flex flex-col gap-2">
+                  <Label htmlFor="persona-select">AI Voice & Persona</Label>
+                  <Select
+                    value={voice}
+                    onValueChange={(v) => setVoice(v as Voice)}
+                  >
+                    <SelectTrigger id="persona-select">
+                      <SelectValue placeholder="Select a persona" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="female">Female (Girlfriend)</SelectItem>
+                      <SelectItem value="male">Male (Boyfriend)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="tone-select">Adaptive Tone</Label>
-                  <Select value={tone} onValueChange={(v) => setTone(v as Tone)}>
+                  <Select
+                    value={tone}
+                    onValueChange={(v) => setTone(v as Tone)}
+                  >
                     <SelectTrigger id="tone-select">
                       <SelectValue placeholder="Select a tone" />
                     </SelectTrigger>
@@ -75,7 +97,10 @@ export function HopeSidebar({
                   <Label>Memory Layers</Label>
                   <div className="flex items-center justify-between rounded-md border p-3">
                     <div className="flex flex-col">
-                      <Label htmlFor="short-term-memory" className="font-normal">
+                      <Label
+                        htmlFor="short-term-memory"
+                        className="font-normal"
+                      >
                         Short-Term
                       </Label>
                       <p className="text-xs text-muted-foreground">
@@ -89,8 +114,11 @@ export function HopeSidebar({
                     />
                   </div>
                   <div className="flex items-center justify-between rounded-md border p-3">
-                     <div className="flex flex-col">
-                      <Label htmlFor="long-term-memory" className="font-normal">
+                    <div className="flex flex-col">
+                      <Label
+                        htmlFor="long-term-memory"
+                        className="font-normal"
+                      >
                         Long-Term
                       </Label>
                       <p className="text-xs text-muted-foreground">

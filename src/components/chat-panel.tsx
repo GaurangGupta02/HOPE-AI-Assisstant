@@ -8,7 +8,7 @@ import { Send, Loader2, Mic, MicOff } from 'lucide-react';
 import { getAIResponse, getAudioForText } from '@/app/actions';
 import { ChatMessages } from './chat-messages';
 import { Icons } from '@/components/icons';
-import type { Message, Tone } from '@/lib/types';
+import type { Message, Tone, Voice } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 /**
@@ -109,10 +109,12 @@ let recognition: SpeechRecognition | null = null;
 
 export function ChatPanel({
   tone,
+  voice,
   useShortTermMemory,
   useLongTermMemory,
 }: {
   tone: Tone;
+  voice: Voice;
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
 }) {
@@ -212,6 +214,7 @@ export function ChatPanel({
 
     formData.set('message', userInput);
     formData.set('tone', tone);
+    formData.set('voice', voice);
     formData.set('useShortTermMemory', String(useShortTermMemory));
     formData.set('useLongTermMemory', String(useLongTermMemory));
 
@@ -253,7 +256,8 @@ export function ChatPanel({
       if (assistantMessage.content && !isError) {
         try {
           const audioResult = await getAudioForText(
-            assistantMessage.content
+            assistantMessage.content,
+            voice
           );
           if (audioResult.audioUrl) {
             assistantMessage.audioUrl = audioResult.audioUrl;
