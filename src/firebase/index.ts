@@ -1,7 +1,11 @@
-import {getApps, initializeApp, type FirebaseApp} from 'firebase/app';
+import {
+  getApps,
+  initializeApp,
+  type FirebaseApp,
+  type FirebaseOptions,
+} from 'firebase/app';
 import {getAuth, type Auth} from 'firebase/auth';
 import {getFirestore, type Firestore} from 'firebase/firestore';
-import {getFirebaseConfig} from './config';
 
 // Re-export hooks and providers
 export {
@@ -23,13 +27,12 @@ let firebaseApp: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
-export function initializeFirebase(): {
+export function initializeFirebase(firebaseConfig: FirebaseOptions): {
   firebaseApp: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
 } {
-  const firebaseConfig = getFirebaseConfig();
-  if (firebaseConfig) {
+  if (firebaseConfig && firebaseConfig.apiKey) {
     if (!getApps().length) {
       firebaseApp = initializeApp(firebaseConfig);
     } else {
@@ -40,6 +43,8 @@ export function initializeFirebase(): {
 
     return {firebaseApp, auth, firestore};
   } else {
-    throw new Error('Firebase config is not defined');
+    throw new Error(
+      'Firebase config is not defined or is missing an API key.'
+    );
   }
 }

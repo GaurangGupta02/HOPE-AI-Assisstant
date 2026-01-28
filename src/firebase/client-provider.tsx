@@ -26,9 +26,11 @@ export const FirebaseClientProvider = ({
     const interval = 100;
 
     const tryInitialize = () => {
-      if (getFirebaseConfig()) {
+      const config = getFirebaseConfig();
+
+      if (config && config.apiKey) {
         try {
-          const firebaseInstances = initializeFirebase();
+          const firebaseInstances = initializeFirebase(config);
           setFirebase(firebaseInstances);
         } catch (e: any) {
           console.error('Firebase initialization failed:', e);
