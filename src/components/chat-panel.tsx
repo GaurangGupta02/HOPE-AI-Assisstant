@@ -5,7 +5,7 @@ import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Loader2, Mic, MicOff } from 'lucide-react';
-import { getAIResponse } from '@/app/actions';
+import { getAIResponse, getAudioForText } from '@/app/actions';
 import { ChatMessages } from './chat-messages';
 import { Icons } from '@/components/icons';
 import type { Message, Tone } from '@/lib/types';
@@ -257,7 +257,35 @@ export function ChatPanel({
 
       const prevState = { messages: conversationHistory };
 
-      const assistantMessage = await getAIResponse(prevState, formData);
+      // Get text response
+      let assistantMessage = await getAIResponse(prevState, formData);
+
+      // Check for errors before generating audio
+      const isError =
+        assistantMessage.content.includes("I'm sorry") ||
+        assistantMessage.content.includes('high volume of requests') ||
+        assistantMessage.content.includes('issue while processing');
+      
+      if (assistantMessage.content && !isError) {
+        try {
+          const audioResult = await getAudioForText(assistantMessage.content);
+          if (audioResult.audioUrl) {
+            assistantMessage.audioUrl = audioResult.audioUrl;
+          } else if (audioResult.error) {
+            // Non-blocking warning if audio fails
+            console.warn('Audio generation failed:', audioResult.error);
+            toast({
+              variant: 'destructive',
+              title: 'Audio Generation Failed',
+              description: audioResult.error,
+              duration: 5000,
+            });
+          }
+        } catch (e) {
+          console.error('An unexpected error occurred during audio generation:', e);
+        }
+      }
+
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
       setIsCooldown(true);
