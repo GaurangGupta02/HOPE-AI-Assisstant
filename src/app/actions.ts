@@ -169,16 +169,51 @@ export async function getAIResponse(
 export async function getAudioForText(
   text: string
 ): Promise<{ audioUrl?: string; error?: string }> {
-  try {
-    const speechResponse = await textToSpeech({
-      text: text,
-    });
-    return { audioUrl: speechResponse.audioUrl };
-  } catch (error: any) {
-    console.error('Error getting TTS response:', error);
-    return {
-      error:
-        "I couldn't generate the audio for this message. The model may be overloaded or the content may have been blocked.",
-    };
+  const retries = 3;
+  let delay = 1000; // Start with a 1-second delay
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const speechResponse = await textToSpeech({ text: text });
+      return { audioUrl: speechResponse.audioUrl }; // Success
+    } catch (error: any) {
+      console.error(`Audio generation attempt ${i + 1} failed:`, error);
+      const errorMessageString = (error.message || '').toLowerCase();
+      const isTransientError =
+        errorMessageString.includes('429') ||
+        errorMessageString.includes('rate limit') ||
+        errorMessageString.includes('resource has been exhausted') ||
+        errorMessageString.includes('503') ||
+        errorMessageString.includes('model is overloaded');
+
+      if (isTransientError && i < retries - 1) {
+        // It's a transient error, and we have retries left
+        await new Promise((res) => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        // This was the last attempt, or it's not a transient error
+        console.error('Final audio generation error:', error);
+        let userErrorMessage =
+          "I couldn't generate the audio for this message. The content may have been blocked or the service could be temporarily down.";
+
+        if (isTransientError) {
+          userErrorMessage =
+            'Audio generation is overloaded right now. Please try again in a moment.';
+        } else if (errorMessageString.includes('api key')) {
+          userErrorMessage =
+            'Audio generation failed due to a configuration issue (API key).';
+        }
+
+        return {
+          error: userErrorMessage,
+        };
+      }
+    }
   }
+
+  // This part is a fallback, in case the loop completes without returning.
+  return {
+    error:
+      "I couldn't generate audio after several attempts. Please try again later.",
+  };
 }
