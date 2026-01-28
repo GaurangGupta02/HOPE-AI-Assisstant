@@ -149,6 +149,9 @@ export function ChatPanel({
 
       recognition.onend = () => {
         setIsListening(false);
+        // Automatically submit the form after speech recognition ends.
+        // A small delay ensures the final transcript is processed.
+        setTimeout(() => formRef.current?.requestSubmit(), 100);
       };
 
       recognition.onerror = (event) => {
