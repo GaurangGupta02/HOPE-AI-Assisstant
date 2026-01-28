@@ -4,23 +4,28 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, Mic, MicOff } from 'lucide-react';
+import { Send, Loader2, Mic, MicOff, LogOut } from 'lucide-react';
 import { getAIResponse, getAudioForText } from '@/app/actions';
 import { ChatMessages } from './chat-messages';
 import { Icons } from '@/components/icons';
 import type { Message, Tone } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+
+type UserProfile = {
+  gender: 'male' | 'female';
+  displayName: string;
+  email: string;
+};
 
 /**
  * Renders the chat messages and the input form.
  */
 function ChatInterface({
   messages,
-  tone,
-  useShortTermMemory,
-  useLongTermMemory,
   isPending,
-  isCooldown,
   textareaValue,
   onTextareaChange,
   handleMicClick,
@@ -28,23 +33,18 @@ function ChatInterface({
   micSupported,
 }: {
   messages: Message[];
-  tone: Tone;
-  useShortTermMemory: boolean;
-  useLongTermMemory: boolean;
   isPending: boolean;
-  isCooldown: boolean;
   textareaValue: string;
   onTextareaChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleMicClick: () => void;
   isListening: boolean;
   micSupported: boolean;
 }) {
-  const pending = isPending;
 
   return (
     <>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        {messages.length === 0 && !pending ? (
+        {messages.length === 0 && !isPending ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Icons name="hope" className="h-12 w-12" />
@@ -60,7 +60,7 @@ function ChatInterface({
         ) : (
           <ChatMessages
             messages={messages}
-            isPending={pending}
+            isPending={isPending}
           />
         )}
       </main>
@@ -71,28 +71,17 @@ function ChatInterface({
             placeholder="Ask HOPE anything, or use the mic..."
             rows={1}
             className="min-h-[4rem] resize-none rounded-xl border-2 bg-card p-4 pr-32 shadow-sm"
-            disabled={pending || isCooldown}
+            disabled={isPending}
             value={textareaValue}
             onChange={onTextareaChange}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !(pending || isCooldown)) {
+              if (e.key === 'Enter' && !e.shiftKey && !isPending) {
                 if ((e.target as HTMLTextAreaElement).value.trim()) {
                   e.preventDefault();
                   e.currentTarget.closest('form')?.requestSubmit();
                 }
               }
             }}
-          />
-          <input type="hidden" name="tone" value={tone} />
-          <input
-            type="hidden"
-            name="useShortTermMemory"
-            value={String(useShortTermMemory)}
-          />
-          <input
-            type="hidden"
-            name="useLongTermMemory"
-            value={String(useLongTermMemory)}
           />
           <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2">
             {micSupported && (
@@ -102,7 +91,7 @@ function ChatInterface({
                 variant={isListening ? 'destructive' : 'ghost'}
                 className="rounded-full"
                 onClick={handleMicClick}
-                disabled={pending || isCooldown}
+                disabled={isPending}
                 aria-label={isListening ? 'Stop listening' : 'Start listening'}
               >
                 {isListening ? <MicOff /> : <Mic />}
@@ -112,10 +101,10 @@ function ChatInterface({
               type="submit"
               size="icon"
               className="rounded-full"
-              disabled={pending || isCooldown || !textareaValue.trim()}
+              disabled={isPending || !textareaValue.trim()}
               aria-label="Send message"
             >
-              {pending ? <Loader2 className="animate-spin" /> : <Send />}
+              {isPending ? <Loader2 className="animate-spin" /> : <Send />}
             </Button>
           </div>
         </div>
@@ -131,19 +120,23 @@ export function ChatPanel({
   tone,
   useShortTermMemory,
   useLongTermMemory,
+  userProfile,
 }: {
   tone: Tone;
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
+  userProfile: UserProfile;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [isCooldown, setIsCooldown] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [textareaValue, setTextareaValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [micSupported, setMicSupported] = useState(false);
   const { toast } = useToast();
+  const auth = useAuth();
+  const router = useRouter();
+
 
   useEffect(() => {
     // @ts-ignore
@@ -226,11 +219,15 @@ export function ChatPanel({
     const formData = new FormData(event.currentTarget);
     const userInput = textareaValue;
 
-    if (!userInput?.trim() || isPending || isCooldown) {
+    if (!userInput?.trim() || isPending) {
       return;
     }
 
     formData.set('message', userInput);
+    formData.set('tone', tone);
+    formData.set('useShortTermMemory', String(useShortTermMemory));
+    formData.set('useLongTermMemory', String(useLongTermMemory));
+
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -268,7 +265,10 @@ export function ChatPanel({
       
       if (assistantMessage.content && !isError) {
         try {
-          const audioResult = await getAudioForText(assistantMessage.content);
+          const audioResult = await getAudioForText(
+            assistantMessage.content,
+            userProfile.gender
+          );
           if (audioResult.audioUrl) {
             assistantMessage.audioUrl = audioResult.audioUrl;
           } else if (audioResult.error) {
@@ -287,9 +287,6 @@ export function ChatPanel({
       }
 
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-
-      setIsCooldown(true);
-      setTimeout(() => setIsCooldown(false), 5000);
     });
   };
 
@@ -297,6 +294,11 @@ export function ChatPanel({
     e: React.ChangeEvent<HTMLTextAreaElement>
   ) => {
     setTextareaValue(e.target.value);
+  };
+  
+  const handleSignOut = async () => {
+    await signOut(auth);
+    router.push('/login');
   };
 
   return (
@@ -308,6 +310,9 @@ export function ChatPanel({
             HOPE Assistant
           </h1>
         </div>
+        <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
+          <LogOut />
+        </Button>
       </header>
       <form
         ref={formRef}
@@ -316,11 +321,7 @@ export function ChatPanel({
       >
         <ChatInterface
           messages={messages}
-          tone={tone}
-          useShortTermMemory={useShortTermMemory}
-          useLongTermMemory={useLongTermMemory}
           isPending={isPending}
-          isCooldown={isCooldown}
           textareaValue={textareaValue}
           onTextareaChange={handleTextareaChange}
           handleMicClick={handleMicClick}
