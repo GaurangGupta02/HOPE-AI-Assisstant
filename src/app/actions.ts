@@ -101,18 +101,20 @@ export async function getAIResponse(
         break; // Success, exit loop
       } catch (error: any) {
         const errorMessageString = (error.message || '').toLowerCase();
-        const isRateLimitError =
+        const isTransientError =
           errorMessageString.includes('429') ||
           errorMessageString.includes('rate limit') ||
-          errorMessageString.includes('resource has been exhausted');
+          errorMessageString.includes('resource has been exhausted') ||
+          errorMessageString.includes('503') ||
+          errorMessageString.includes('model is overloaded');
 
-        if (isRateLimitError && i < retries - 1) {
-          // It's a rate limit error and we have retries left
+        if (isTransientError && i < retries - 1) {
+          // It's a transient error and we have retries left
           await new Promise((res) => setTimeout(res, delay));
           delay *= 2; // Exponential backoff
           continue; // Go to next iteration
         } else {
-          // Not a rate limit error, or no retries left, so re-throw
+          // Not a transient error, or no retries left, so re-throw
           throw error;
         }
       }
@@ -141,18 +143,14 @@ export async function getAIResponse(
     if (
       errorMessageString.includes('429') ||
       errorMessageString.includes('rate limit') ||
-      errorMessageString.includes('resource has been exhausted')
-    ) {
-      errorMessageText =
-        "It seems I'm receiving requests too quickly. This is a common issue with free API plans that have rate limits. Please wait a moment and then try your message again.";
-    } else if (
+      errorMessageString.includes('resource has been exhausted') ||
       errorMessageString.includes('503') ||
       errorMessageString.includes('model is overloaded')
     ) {
       errorMessageText =
-        'The AI model is currently experiencing high demand and is temporarily unavailable. Please try your request again in a few moments.';
+        "I'm experiencing a high volume of requests right now and couldn't get a response. I tried to recover automatically but was unsuccessful. This is common with free API plans. Please wait a moment before trying again.";
     } else {
-      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This can be caused by a missing or invalid API key, or if the free-tier API rate limit has been exceeded. Please check your GEMINI_API_KEY in the .env file and try again in a moment.\n\nError: ${
+      errorMessageText = `I'm sorry, I encountered an issue while processing your request. This could be due to a missing or invalid API key.\n\nPlease check your GEMINI_API_KEY in the .env file.\n\nError: ${
         error.message || 'An unknown error occurred.'
       }`;
     }
