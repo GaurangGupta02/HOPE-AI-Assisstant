@@ -11,12 +11,6 @@ import { Icons } from '@/components/icons';
 import type { Message, Tone } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-type UserProfile = {
-  gender: 'male' | 'female';
-  displayName: string;
-  email: string;
-};
-
 /**
  * Renders the chat messages and the input form.
  */
@@ -117,12 +111,10 @@ export function ChatPanel({
   tone,
   useShortTermMemory,
   useLongTermMemory,
-  userProfile,
 }: {
   tone: Tone;
   useShortTermMemory: boolean;
   useLongTermMemory: boolean;
-  userProfile: UserProfile;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -261,8 +253,7 @@ export function ChatPanel({
       if (assistantMessage.content && !isError) {
         try {
           const audioResult = await getAudioForText(
-            assistantMessage.content,
-            userProfile.gender
+            assistantMessage.content
           );
           if (audioResult.audioUrl) {
             assistantMessage.audioUrl = audioResult.audioUrl;

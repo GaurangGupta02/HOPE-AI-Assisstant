@@ -167,13 +167,11 @@ export async function getAIResponse(
 }
 
 export async function getAudioForText(
-  text: string,
-  userGender: 'male' | 'female'
+  text: string
 ): Promise<{ audioUrl?: string; error?: string }> {
   try {
     const speechResponse = await textToSpeech({
       text: text,
-      userGender: userGender,
     });
     return { audioUrl: speechResponse.audioUrl };
   } catch (error: any) {
